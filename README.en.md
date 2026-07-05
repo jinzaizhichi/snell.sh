@@ -47,6 +47,153 @@ bash <(curl -L -s snell-centos.jinqians.com)
 wget https://raw.githubusercontent.com/jinqians/snell.sh/refs/heads/main/snell-centos.sh -O snell-centos.sh && chmod +x snell-centos.sh && ./snell-centos.sh
 ```
 
+## Docker
+
+Docker Hub image tags:
+- `jinqians/snell-server:v4` / `v4.1.1`: Snell v4.1.1
+- `jinqians/snell-server:v5` / `v5.0.1`: Snell v5.0.1
+- `jinqians/snell-server:v6` / `v6.0.0b2`: Snell v6.0.0b2
+- `jinqians/snell-server:latest`: pinned to v5, not v6
+
+Supported platforms:
+- v4/v5: `linux/amd64`, `linux/arm64`, `linux/arm/v7`
+- v6: `linux/amd64`, `linux/arm64`
+
+After installing Docker, run v5 directly:
+
+```bash
+docker run -d --name snell-server \
+  --restart unless-stopped \
+  -p 6160:6160/tcp \
+  -p 6160:6160/udp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_PSK=your_16_plus_char_psk \
+  -e SNELL_VER=v5 \
+  jinqians/snell-server:v5
+```
+
+If `SNELL_PSK` is omitted, the container generates one on first start:
+
+```bash
+docker run -d --name snell-server \
+  --restart unless-stopped \
+  -p 6160:6160/tcp \
+  -p 6160:6160/udp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_VER=v5 \
+  -v ./snell-config:/etc/snell \
+  jinqians/snell-server:v5
+```
+
+View the generated PSK and config:
+
+```bash
+docker logs snell-server
+cat ./snell-config/snell-server.conf
+```
+
+To switch versions, change both the image tag and `SNELL_VER`:
+
+```bash
+# v4
+docker run -d --name snell-server \
+  --restart unless-stopped \
+  -p 6160:6160/tcp \
+  -p 6160:6160/udp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_VER=v4 \
+  -v ./snell-config:/etc/snell \
+  jinqians/snell-server:v4
+
+# v6
+docker run -d --name snell-server \
+  --restart unless-stopped \
+  -p 6160:6160/tcp \
+  -p 6160:6160/udp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_VER=v6 \
+  -v ./snell-config:/etc/snell \
+  jinqians/snell-server:v6
+```
+
+If you set `SNELL_PSK` manually, use at least 16 characters for v6 compatibility. v5 and v6 require both TCP and UDP port mappings. v4 only needs TCP, but keeping the UDP mapping is harmless.
+
+Upgrade the image:
+
+```bash
+docker pull jinqians/snell-server:v5
+docker rm -f snell-server
+docker run -d --name snell-server \
+  --restart unless-stopped \
+  -p 6160:6160/tcp \
+  -p 6160:6160/udp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_VER=v5 \
+  -v ./snell-config:/etc/snell \
+  jinqians/snell-server:v5
+```
+
+Remove the container:
+
+```bash
+docker rm -f snell-server
+```
+
+Run with Docker Compose:
+
+```yaml
+services:
+  snell:
+    image: jinqians/snell-server:latest
+    container_name: snell-server
+    restart: unless-stopped
+    ports:
+      - "6160:6160/tcp"
+      - "6160:6160/udp"
+    environment:
+      - SNELL_PORT=6160
+      - SNELL_VER=v5
+    volumes:
+      - ./snell-config:/etc/snell
+```
+
+Start it:
+
+```bash
+docker compose up -d
+```
+
+View the generated PSK and service logs:
+
+```bash
+docker logs snell-server
+cat ./snell-config/snell-server.conf
+```
+
+To set a PSK manually, add this to `environment`:
+
+```yaml
+      - SNELL_PSK=your_16_plus_char_psk
+```
+
+Stop and remove the container:
+
+```bash
+docker compose down
+```
+
+Build v4/v5/v6 images locally:
+
+```bash
+./build-docker-images.sh
+```
+
+Build and push multi-architecture images:
+
+```bash
+USE_BUILDX=1 PUSH=1 ./build-docker-images.sh
+```
+
 ## 🆕 New Version Features (v4.0)
 ### Snell Version Support
 - ✅ **Snell v4** - Stable version, recommended for production environments

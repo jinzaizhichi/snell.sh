@@ -54,31 +54,137 @@ sh -c "$(curl -fsSL https://snell-docker.jinqians.com)"
 sh -c "$(curl -fsSL https://snell-alpine.jinqians.com)"
 ```
 #### Docker
+Docker Hub 镜像：
+- `jinqians/snell-server:v4` / `v4.1.1`: Snell v4.1.1
+- `jinqians/snell-server:v5` / `v5.0.1`: Snell v5.0.1
+- `jinqians/snell-server:v6` / `v6.0.0b2`: Snell v6.0.0b2
+- `jinqians/snell-server:latest`: 当前固定指向 v5，不指向 v6
+
+架构支持：
+- v4/v5: `linux/amd64`、`linux/arm64`、`linux/arm/v7`
+- v6: `linux/amd64`、`linux/arm64`
+
+安装 Docker 后，直接运行 v5：
 ```bash
 docker run -d --name snell-server \
   --restart unless-stopped \
-  --network host \
+  -p 6160:6160/tcp \
+  -p 6160:6160/udp \
   -e SNELL_PORT=6160 \
-  -e SNELL_PSK=your_psk \
+  -e SNELL_PSK=your_16_plus_char_psk \
   -e SNELL_VER=v5 \
-  jinqians/snell-server:latest
+  jinqians/snell-server:v5
+```
+
+不传入 `SNELL_PSK` 时，容器首次启动会自动生成密钥：
+```bash
+docker run -d --name snell-server \
+  --restart unless-stopped \
+  -p 6160:6160/tcp \
+  -p 6160:6160/udp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_VER=v5 \
+  -v ./snell-config:/etc/snell \
+  jinqians/snell-server:v5
+```
+
+查看自动生成的密钥和配置：
+```bash
+docker logs snell-server
+cat ./snell-config/snell-server.conf
+```
+
+切换版本时同时修改镜像标签和 `SNELL_VER`：
+```bash
+# v4
+docker run -d --name snell-server \
+  --restart unless-stopped \
+  -p 6160:6160/tcp \
+  -p 6160:6160/udp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_VER=v4 \
+  -v ./snell-config:/etc/snell \
+  jinqians/snell-server:v4
+
+# v6
+docker run -d --name snell-server \
+  --restart unless-stopped \
+  -p 6160:6160/tcp \
+  -p 6160:6160/udp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_VER=v6 \
+  -v ./snell-config:/etc/snell \
+  jinqians/snell-server:v6
+```
+
+手动填写 `SNELL_PSK` 时建议使用 16 字符以上，兼容 v6。v5 和 v6 需要同时映射 TCP/UDP，v4 只使用 TCP 也可以，但保留 UDP 映射不影响使用。
+
+升级镜像：
+```bash
+docker pull jinqians/snell-server:v5
+docker rm -f snell-server
+docker run -d --name snell-server \
+  --restart unless-stopped \
+  -p 6160:6160/tcp \
+  -p 6160:6160/udp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_VER=v5 \
+  -v ./snell-config:/etc/snell \
+  jinqians/snell-server:v5
+```
+
+卸载容器：
+```bash
+docker rm -f snell-server
 ```
 
 #### Docker Compose
-当前为镜像为5.0.1
+创建 `compose.yml`：
 ```yaml
 services:
   snell:
     image: jinqians/snell-server:latest
     container_name: snell-server
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "6160:6160/tcp"
+      - "6160:6160/udp"
     environment:
       - SNELL_PORT=6160
-      - SNELL_PSK=jinqians.com   # 自定义密钥，留空则自动生成
       - SNELL_VER=v5
     volumes:
       - ./snell-config:/etc/snell
+```
+
+启动：
+```bash
+docker compose up -d
+```
+
+查看自动生成的密钥和服务日志：
+```bash
+docker logs snell-server
+cat ./snell-config/snell-server.conf
+```
+
+如需手动指定密钥，在 `environment` 中加入：
+```yaml
+      - SNELL_PSK=your_16_plus_char_psk
+```
+
+停止并删除：
+```bash
+docker compose down
+```
+
+本地批量构建 v4/v5/v6 镜像：
+```bash
+./build-docker-images.sh
+```
+
+多架构构建并推送：
+```bash
+USE_BUILDX=1 PUSH=1 ./build-docker-images.sh
 ```
 </details>
 
@@ -177,4 +283,3 @@ HK = snell, 1.2.3.4, 8989, psk = xxxxxxxxxxxx, version = 4, reuse = true, tfo = 
 HK = snell, ::1, 8989, psk = xxxxxxxxxxxx, version = 4, reuse = true, tfo = true, shadow-tls-password = yyyyyyyyyyyy, shadow-tls-sni = www.microsoft.com, shadow-tls-version = 3
 ```
 </details>
-

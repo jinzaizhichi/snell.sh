@@ -222,7 +222,7 @@ RUN ${ld_linker_cmd}
 ENV LD_LIBRARY_PATH=/usr/glibc-compat/lib
 RUN mkdir -p /etc/snell
 COPY snell-config/snell-server.conf /etc/snell/snell-server.conf
-EXPOSE ${PORT}
+EXPOSE ${PORT}/tcp ${PORT}/udp
 CMD exec /app/snell-server -c /etc/snell/snell-server.conf
 EOF
 
@@ -294,7 +294,8 @@ start_snell_container() {
     local run_output
     run_output=$(docker run -d \
         --name "${CONTAINER_NAME}" \
-        -p "${SNELL_PORT}:${SNELL_PORT}" \
+        -p "${SNELL_PORT}:${SNELL_PORT}/tcp" \
+        -p "${SNELL_PORT}:${SNELL_PORT}/udp" \
         "${IMAGE_NAME}:latest" 2>&1)
     
     if [ $? -ne 0 ]; then
@@ -606,7 +607,8 @@ network_diagnosis() {
         if docker run -d \
             --name "${CONTAINER_NAME}" \
             --restart unless-stopped \
-            -p "${port}:${port}" \
+            -p "${port}:${port}/tcp" \
+            -p "${port}:${port}/udp" \
             "${IMAGE_NAME}:latest" 2>/dev/null; then
             echo -e "   ${GREEN}✅ 容器已重新创建${RESET}"
             sleep 5
@@ -926,7 +928,8 @@ network_diagnosis() {
         echo "   docker run -d \\"
         echo "     --name ${CONTAINER_NAME} \\"
         echo "     --restart unless-stopped \\"
-        echo "     -p ${port}:${port} \\"
+        echo "     -p ${port}:${port}/tcp \\"
+        echo "     -p ${port}:${port}/udp \\"
         echo "     ${IMAGE_NAME}:latest"
         echo ""
         
@@ -945,7 +948,8 @@ network_diagnosis() {
             if docker run -d \
                 --name "${CONTAINER_NAME}" \
                 --restart unless-stopped \
-                -p "${port}:${port}" \
+                -p "${port}:${port}/tcp" \
+                -p "${port}:${port}/udp" \
                 "${IMAGE_NAME}:latest" 2>/dev/null; then
                 echo -e "   ${GREEN}✅ 容器重建成功${RESET}"
                 sleep 8  # 给更多时间启动

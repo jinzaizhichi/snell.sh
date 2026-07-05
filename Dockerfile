@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # =========================================
 # Snell Server Docker 镜像
 # 支持多架构: amd64 / arm64 / armv7
@@ -5,6 +6,7 @@
 # =========================================
 
 ARG SNELL_VERSION=v5.0.1
+ARG SNELL_VER=v5
 
 # 第一阶段: 使用 Debian 下载二进制并提供 glibc 运行时库
 FROM debian:bookworm-slim AS builder
@@ -37,6 +39,8 @@ RUN case "${TARGETARCH}" in \
 FROM alpine:3.19
 
 ARG TARGETARCH
+ARG SNELL_VERSION
+ARG SNELL_VER
 
 RUN apk add --no-cache ca-certificates
 
@@ -85,6 +89,11 @@ RUN --mount=from=builder,source=/lib,target=/mnt/lib \
     esac
 
 ENV LD_LIBRARY_PATH=/usr/glibc-compat/lib
+ENV SNELL_VER=${SNELL_VER}
+
+LABEL org.opencontainers.image.title="Snell Server" \
+      org.opencontainers.image.version="${SNELL_VERSION}" \
+      org.opencontainers.image.source="https://github.com/jinqians/snell.sh"
 
 # 创建配置目录和 entrypoint 脚本
 RUN mkdir -p /etc/snell
@@ -93,7 +102,6 @@ RUN mkdir -p /etc/snell
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-EXPOSE 6160
+EXPOSE 6160/tcp 6160/udp
 
 ENTRYPOINT ["/app/entrypoint.sh"]
-

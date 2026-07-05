@@ -11,7 +11,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
     SNELL_PORT="${SNELL_PORT:-6160}"
 
     # PSK: 优先使用环境变量，否则自动生成
-    if [ -z "$SNELL_PSK" ]; then
+    if [ -z "${SNELL_PSK:-}" ]; then
         SNELL_PSK=$(head -c 16 /dev/urandom | base64)
         echo "========================================"
         echo "  自动生成的 PSK: ${SNELL_PSK}"
@@ -19,7 +19,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
         echo "========================================"
     fi
 
-    # Snell 版本: v4 或 v5 配置有差异
+    # Snell 版本: v4/v5/v6 配置有差异
     SNELL_VER="${SNELL_VER:-v4}"
 
     if [ "$SNELL_VER" = "v5" ]; then
