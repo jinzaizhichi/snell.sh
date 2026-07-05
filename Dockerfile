@@ -7,12 +7,14 @@
 
 ARG SNELL_VERSION=v5.0.1
 ARG SNELL_VER=v5
+ARG SHADOWTLS_VERSION=v0.2.25
 
 # 第一阶段: 使用 Debian 下载二进制并提供 glibc 运行时库
 FROM debian:bookworm-slim AS builder
 
 ARG SNELL_VERSION
 ARG TARGETARCH
+ARG SHADOWTLS_VERSION
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl unzip ca-certificates && \
@@ -35,18 +37,29 @@ RUN case "${TARGETARCH}" in \
     rm -f snell.zip && \
     chmod +x /app/snell-server
 
+RUN case "${TARGETARCH}" in \
+        "amd64")  SHADOWTLS_ARCH="x86_64-unknown-linux-musl" ;; \
+        "arm64")  SHADOWTLS_ARCH="aarch64-unknown-linux-musl" ;; \
+        "arm")    SHADOWTLS_ARCH="armv7-unknown-linux-musleabihf" ;; \
+        *)        echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
+    curl -L -o /app/shadow-tls "https://github.com/ihciah/shadow-tls/releases/download/${SHADOWTLS_VERSION}/shadow-tls-${SHADOWTLS_ARCH}" && \
+    chmod +x /app/shadow-tls
+
 # 第二阶段: Alpine 最终镜像，注入 glibc 运行时
 FROM alpine:3.19
 
 ARG TARGETARCH
 ARG SNELL_VERSION
 ARG SNELL_VER
+ARG SHADOWTLS_VERSION
 
 RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
 COPY --from=builder /app/snell-server /app/snell-server
+COPY --from=builder /app/shadow-tls /app/shadow-tls
 
 # 根据架构拷贝正确的 glibc 动态库并创建链接
 # 注意: libstdc++ 在 Debian 中位于 /usr/lib/ 而非 /lib/，需要同时挂载
@@ -102,6 +115,6 @@ RUN mkdir -p /etc/snell
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-EXPOSE 6160/tcp 6160/udp
+EXPOSE 6160/tcp 6160/udp 8443/tcp
 
 ENTRYPOINT ["/app/entrypoint.sh"]

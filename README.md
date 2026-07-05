@@ -119,6 +119,35 @@ docker run -d --name snell-server \
 
 手动填写 `SNELL_PSK` 时建议使用 16 字符以上，兼容 v6。v5 和 v6 需要同时映射 TCP/UDP，v4 只使用 TCP 也可以，但保留 UDP 映射不影响使用。
 
+Snell + ShadowTLS 运行：
+```bash
+docker run -d --name snell-shadowtls \
+  --restart unless-stopped \
+  -p 8443:8443/tcp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_VER=v5 \
+  -e SNELL_LISTEN_HOST=127.0.0.1 \
+  -e SNELL_PSK=your_16_plus_char_psk \
+  -e SHADOWTLS_ENABLE=1 \
+  -e SHADOWTLS_PORT=8443 \
+  -e SHADOWTLS_PASSWORD=your_shadowtls_password \
+  -e SHADOWTLS_SNI=www.microsoft.com \
+  -v ./snell-config:/etc/snell \
+  jinqians/snell-server:v5
+```
+
+不传入 `SHADOWTLS_PASSWORD` 时会自动生成，并保存到 `./snell-config/shadowtls-password`。启用 ShadowTLS 后，客户端连接 `8443`，Snell 后端端口 `6160` 只在容器内使用，通常不需要映射到宿主机。
+
+查看自动生成的 ShadowTLS 密码：
+```bash
+cat ./snell-config/shadowtls-password
+```
+
+Surge 示例：
+```text
+HK = snell, 服务器IP, 8443, psk = your_16_plus_char_psk, version = 5, reuse = true, tfo = true, shadow-tls-password = your_shadowtls_password, shadow-tls-sni = www.microsoft.com, shadow-tls-version = 3
+```
+
 升级镜像：
 ```bash
 docker pull jinqians/snell-server:v5
@@ -170,6 +199,28 @@ cat ./snell-config/snell-server.conf
 如需手动指定密钥，在 `environment` 中加入：
 ```yaml
       - SNELL_PSK=your_16_plus_char_psk
+```
+
+Docker Compose 运行 Snell + ShadowTLS：
+```yaml
+services:
+  snell-shadowtls:
+    image: jinqians/snell-server:v5
+    container_name: snell-shadowtls
+    restart: unless-stopped
+    ports:
+      - "8443:8443/tcp"
+    environment:
+      - SNELL_PORT=6160
+      - SNELL_VER=v5
+      - SNELL_LISTEN_HOST=127.0.0.1
+      - SNELL_PSK=your_16_plus_char_psk
+      - SHADOWTLS_ENABLE=1
+      - SHADOWTLS_PORT=8443
+      - SHADOWTLS_PASSWORD=your_shadowtls_password
+      - SHADOWTLS_SNI=www.microsoft.com
+    volumes:
+      - ./snell-config:/etc/snell
 ```
 
 停止并删除：

@@ -118,6 +118,38 @@ docker run -d --name snell-server \
 
 If you set `SNELL_PSK` manually, use at least 16 characters for v6 compatibility. v5 and v6 require both TCP and UDP port mappings. v4 only needs TCP, but keeping the UDP mapping is harmless.
 
+Run Snell with ShadowTLS:
+
+```bash
+docker run -d --name snell-shadowtls \
+  --restart unless-stopped \
+  -p 8443:8443/tcp \
+  -e SNELL_PORT=6160 \
+  -e SNELL_VER=v5 \
+  -e SNELL_LISTEN_HOST=127.0.0.1 \
+  -e SNELL_PSK=your_16_plus_char_psk \
+  -e SHADOWTLS_ENABLE=1 \
+  -e SHADOWTLS_PORT=8443 \
+  -e SHADOWTLS_PASSWORD=your_shadowtls_password \
+  -e SHADOWTLS_SNI=www.microsoft.com \
+  -v ./snell-config:/etc/snell \
+  jinqians/snell-server:v5
+```
+
+If `SHADOWTLS_PASSWORD` is omitted, the container generates one on first start and saves it to `./snell-config/shadowtls-password`. When ShadowTLS is enabled, clients connect to port `8443`; the Snell backend port `6160` is used inside the container and normally does not need to be published.
+
+View the generated ShadowTLS password:
+
+```bash
+cat ./snell-config/shadowtls-password
+```
+
+Surge example:
+
+```text
+HK = snell, SERVER_IP, 8443, psk = your_16_plus_char_psk, version = 5, reuse = true, tfo = true, shadow-tls-password = your_shadowtls_password, shadow-tls-sni = www.microsoft.com, shadow-tls-version = 3
+```
+
 Upgrade the image:
 
 ```bash
@@ -174,6 +206,29 @@ To set a PSK manually, add this to `environment`:
 
 ```yaml
       - SNELL_PSK=your_16_plus_char_psk
+```
+
+Run Snell with ShadowTLS using Docker Compose:
+
+```yaml
+services:
+  snell-shadowtls:
+    image: jinqians/snell-server:v5
+    container_name: snell-shadowtls
+    restart: unless-stopped
+    ports:
+      - "8443:8443/tcp"
+    environment:
+      - SNELL_PORT=6160
+      - SNELL_VER=v5
+      - SNELL_LISTEN_HOST=127.0.0.1
+      - SNELL_PSK=your_16_plus_char_psk
+      - SHADOWTLS_ENABLE=1
+      - SHADOWTLS_PORT=8443
+      - SHADOWTLS_PASSWORD=your_shadowtls_password
+      - SHADOWTLS_SNI=www.microsoft.com
+    volumes:
+      - ./snell-config:/etc/snell
 ```
 
 Stop and remove the container:

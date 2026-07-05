@@ -12,6 +12,7 @@ export DOCKER_BUILDKIT
 V4_VERSION="${V4_VERSION:-v4.1.1}"
 V5_VERSION="${V5_VERSION:-v5.0.1}"
 V6_VERSION="${V6_VERSION:-v6.0.0b2}"
+SHADOWTLS_VERSION="${SHADOWTLS_VERSION:-v0.2.25}"
 
 V4_PLATFORMS="${V4_PLATFORMS:-linux/amd64,linux/arm64,linux/arm/v7}"
 V5_PLATFORMS="${V5_PLATFORMS:-linux/amd64,linux/arm64,linux/arm/v7}"
@@ -61,6 +62,7 @@ build_one() {
             --provenance="$PROVENANCE" \
             --build-arg "SNELL_VERSION=$version" \
             --build-arg "SNELL_VER=$channel" \
+            --build-arg "SHADOWTLS_VERSION=$SHADOWTLS_VERSION" \
             $(tag_args "$channel" "$version") \
             $output \
             .
@@ -69,6 +71,7 @@ build_one() {
         docker build \
             --build-arg "SNELL_VERSION=$version" \
             --build-arg "SNELL_VER=$channel" \
+            --build-arg "SHADOWTLS_VERSION=$SHADOWTLS_VERSION" \
             $(tag_args "$channel" "$version") \
             .
     fi
