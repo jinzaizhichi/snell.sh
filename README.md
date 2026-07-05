@@ -40,9 +40,12 @@ Docker Hub 镜像：`jinqians/snell-server`
 | 标签 | 版本 | 说明 |
 |------|------|------|
 | `latest` | Snell v5.0.1 | 固定指向 v5，不指向 v6 |
-| `v5` / `v5.0.1` | Snell v5.0.1 | 推荐使用 |
-| `v4` / `v4.1.1` | Snell v4.1.1 | 稳定版 |
-| `v6` / `v6.0.0b4` | Snell v6 beta | 测试版 |
+| `v4` | Snell v4.1.1 | v4 当前推荐版本 |
+| `v5` | Snell v5.0.1 | v5 当前推荐版本 |
+| `v6` | Snell v6.0.0b4 | v6 当前 Beta 版本 |
+| `v4.0.0` / `v4.0.1` / `v4.1.0` / `v4.1.1` | Snell v4 | 固定版本标签 |
+| `v5.0.0` / `v5.0.1` | Snell v5 | 固定版本标签 |
+| `v6.0.0b1` / `v6.0.0b2` / `v6.0.0b3` / `v6.0.0b4` | Snell v6 beta | 固定版本标签 |
 
 架构支持：
 - v4 / v5: `linux/amd64`、`linux/arm64`、`linux/arm/v7`

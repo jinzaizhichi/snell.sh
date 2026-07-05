@@ -50,10 +50,13 @@ wget https://raw.githubusercontent.com/jinqians/snell.sh/refs/heads/main/snell-c
 ## Docker
 
 Docker Hub image tags:
-- `jinqians/snell-server:v4` / `v4.1.1`: Snell v4.1.1
-- `jinqians/snell-server:v5` / `v5.0.1`: Snell v5.0.1
-- `jinqians/snell-server:v6` / `v6.0.0b4`: Snell v6.0.0b4
-- `jinqians/snell-server:latest`: pinned to v5, not v6
+- `jinqians/snell-server:latest`: pinned to Snell v5.0.1, not v6
+- `jinqians/snell-server:v4`: current v4 tag, points to v4.1.1
+- `jinqians/snell-server:v5`: current v5 tag, points to v5.0.1
+- `jinqians/snell-server:v6`: current v6 beta tag, points to v6.0.0b4
+- Fixed v4 tags: `v4.0.0`, `v4.0.1`, `v4.1.0`, `v4.1.1`
+- Fixed v5 tags: `v5.0.0`, `v5.0.1`
+- Fixed v6 beta tags: `v6.0.0b1`, `v6.0.0b2`, `v6.0.0b3`, `v6.0.0b4`
 
 Supported platforms:
 - v4/v5: `linux/amd64`, `linux/arm64`, `linux/arm/v7`
