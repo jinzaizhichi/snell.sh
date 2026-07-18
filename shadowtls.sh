@@ -742,6 +742,23 @@ generate_snell_links() {
     fi
 }
 
+# 询问是否开启 wildcard-sni（默认关闭）
+prompt_wildcard_sni() {
+    wildcard_sni="off"
+    echo -e "${YELLOW}是否开启 wildcard-sni=authed？${RESET}"
+    echo -e "开启后已通过密码验证的客户端可使用与服务端不一致的伪装域名（SNI）"
+    read -rp "开启 wildcard-sni=authed? [y/N]: " wildcard_choice
+    case "$wildcard_choice" in
+        [yY]|[yY][eE][sS])
+            wildcard_sni="authed"
+            echo -e "${GREEN}已开启 wildcard-sni=authed${RESET}"
+            ;;
+        *)
+            echo -e "${GREEN}保持默认（关闭 wildcard-sni）${RESET}"
+            ;;
+    esac
+}
+
 # 启用 TCP Fast Open
 enable_tcp_fastopen() {
     # 立即生效
@@ -779,6 +796,12 @@ create_shadowtls_service() {
     # 启用 TCP Fast Open（内核参数）
     enable_tcp_fastopen
 
+    # wildcard-sni 参数（默认 off，不附加）
+    local wildcard_sni_flag=""
+    if [ "$wildcard_sni" = "authed" ] || [ "$wildcard_sni" = "all" ]; then
+        wildcard_sni_flag=" --wildcard-sni ${wildcard_sni}"
+    fi
+
     cat > "$service_file" << EOF
 [Unit]
 Description=${description}
@@ -792,7 +815,7 @@ User=root
 Group=root
 Environment=RUST_BACKTRACE=1
 Environment=RUST_LOG=info
-ExecStart=/usr/local/bin/shadow-tls --fastopen --v3 server --listen ::0:${listen_port} --server 127.0.0.1:${port} --tls ${tls_domain} --password ${password}
+ExecStart=/usr/local/bin/shadow-tls --fastopen --v3 server --listen ::0:${listen_port} --server 127.0.0.1:${port} --tls ${tls_domain} --password ${password}${wildcard_sni_flag}
 StandardOutput=append:/var/log/shadowtls-${identifier}.log
 StandardError=append:/var/log/shadowtls-${identifier}.log
 SyslogIdentifier=${identifier}
@@ -924,6 +947,7 @@ install_shadowtls() {
     if [ -z "$tls_domain" ]; then
         tls_domain="www.microsoft.com"
     fi
+    prompt_wildcard_sni
     
     # 让用户选择要为哪个协议设置 ShadowTLS
     while true; do
@@ -1360,6 +1384,7 @@ add_shadowtls_config() {
                 if [ -z "$tls_domain" ]; then
                     tls_domain="www.microsoft.com"
                 fi
+                prompt_wildcard_sni
                 
                 # 配置 SS 的 ShadowTLS
                 while true; do
@@ -1399,6 +1424,7 @@ add_shadowtls_config() {
                 if [ -z "$tls_domain" ]; then
                     tls_domain="www.microsoft.com"
                 fi
+                prompt_wildcard_sni
                 
                 # 获取所有 Snell 用户配置
                 local user_configs=$(get_all_snell_users)
